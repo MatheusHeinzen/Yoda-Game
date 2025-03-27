@@ -7,6 +7,7 @@ let meteors = [];
 let yodaX = 600, yodaY = 450;
 let yodaAlive = true;
 let survivalTime = 0;
+let bestTime = 0;
 let meteorSpawnRate = 0.03;
 let bgMusic;
 let gameState = "menu";
@@ -14,6 +15,7 @@ let gameState = "menu";
 //Carrega previamente o som
 function preload() {
   bgMusic = loadSound('musicaFundoStarWars.mp3');
+  bgMusic.setVolume(0.05);
 }
 
 //Inicia algumas coisas
@@ -105,11 +107,19 @@ function drawGameOver() {
   textAlign(CENTER, CENTER);
   text("GAME OVER", width / 2, height / 3);
   textSize(30);
-  text(`Tempo sobrevivido: ${survivalTime.toFixed(1)}s`, width / 2, height / 2);
+  text(`Tempo Sobrevivido: ${survivalTime.toFixed(1)}s`, width / 2, height / 2);
+  if (survivalTime > bestTime){
+    bestTime = survivalTime
+  }
+  fill(200,200,220);
+  textSize(29);
+  text(`Melhor Tempo: ${bestTime.toFixed(1)}s`, width / 2, height / 2 + 40);
+  bgMusic.stop();
   
-  drawButton(width / 2 - 100, height / 2 + 50, 200, 50, "Reiniciar", () => {
+  drawButton(width / 2 - 100, height / 2 + 80, 200, 50, "Reiniciar", () => {
     resetGame();
   });
+  return bestTime;
 }
 
 //Desenha o botão
@@ -130,11 +140,14 @@ function drawButton(x, y, w, h, label, callback) {
 function startGame() {
   gameState = "playing";
   bgMusic.loop();
+  bgMusic.jump(3)
   resetGame();
 }
 
 //Reseta o jogo
 function resetGame() {
+  bgMusic.loop();
+  bgMusic.jump(3);
   yodaAlive = true;
   survivalTime = 0;
   meteors = [];
