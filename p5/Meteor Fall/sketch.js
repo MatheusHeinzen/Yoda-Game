@@ -1,5 +1,7 @@
 //Variáveis e Listas
 let stars = [];
+let particles = [];
+let explosionActive = false;
 let numStars = 250;
 let shipX = -100;
 let moonCraters = [];
@@ -13,20 +15,21 @@ let meteorSpawnRate = 0.03;
 let sapin;
 let frogSpawnRate = 0.005;
 let score = 0;
-let bgMusic, frogSound;
+let bgMusic, frogSound, fimDeJogo, explosionSound;
 let gameState = "menu";
 
 //Carega o som previamente
 function preload() {
   bgMusic = loadSound('musicaFundoStarWars.mp3');
-  bgMusic.setVolume(0.05);
   frogSound = loadSound('engolirSapo.mp3');
   sapin = loadImage('sapo.png');
+  fimDeJogo = loadSound('ending.mp3')
+  explosionSound = loadSound('medium-explosion.mp3')
 }
 
 //Cria o canva
 function setup() {
-  createCanvas(1200, 600);
+  createCanvas(1300, 600);
   for (let i = 0; i < numStars; i++) {
     stars.push({
       x: random(width),
@@ -64,6 +67,13 @@ function draw() {
   } else if (gameState === "gameOver") {
     drawGameOver();
   }
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    particles[i].show();
+    if (particles[i].finished()) {
+      particles.splice(i, 1);
+    }
+  }
 }
 
 //Define o menu
@@ -72,7 +82,7 @@ function drawMenu() {
   textSize(50);
   textAlign(CENTER, CENTER);
   text("Meteor Fall", width / 2, height / 3);
-  
+
   drawButton(width / 2 - 75, height / 2, 150, 50, "Jogar", () => {
     startGame();
   });
@@ -83,7 +93,7 @@ function drawGame() {
   drawMoons();
   drawLandscape();
   drawShip();
-  
+
   if (yodaAlive) {
     drawYoda();
     drawMeteors();
@@ -93,7 +103,7 @@ function drawGame() {
     if (frameCount % 300 === 0) {
       meteorSpawnRate += 0.005;
     }
-    
+
     if (random(1) < meteorSpawnRate) {
       meteors.push(new Meteor());
     }
@@ -107,7 +117,12 @@ function drawGame() {
     text(`Tempo: ${survivalTime.toFixed(1)}s`, 100, 40);
     text(`Pontuação: ${score}`, 100, 70);
   } else {
-    gameState = "gameOver";
+    if (particles.length === 0) {  
+      gameState = "gameOver";
+      fimDeJogo.play();
+      fimDeJogo.setVolume(0.45);
+      explosionActive = false; 
+    }
   }
 }
 
@@ -119,17 +134,16 @@ function drawGameOver() {
   textAlign(CENTER, CENTER);
   text("GAME OVER", width / 2, height / 3);
   textSize(30);
-  text(`Tempo Sobrevivido: ${survivalTime.toFixed(1)}s`, width / 2, height / 2);
-  if (survivalTime > bestTime){
+  text(`Tempo Sobrevivido: ${survivalTime.toFixed(1)}s`, width / 2, height / 2 - 10);
+  if (survivalTime > bestTime) {
     bestTime = survivalTime
   }
-  fill(200,200,220);
+  fill(200, 200, 220);
   textSize(29);
   text(`Melhor Tempo: ${bestTime.toFixed(1)}s`, width / 2, height / 2 + 40);
   bgMusic.stop();
   text(`Pontuação Final: ${score}`, width / 2, height / 2 + 80);
-  
-  drawButton(width / 2 - 100, height / 2 + 100, 200, 50, "Reiniciar", () => {
+  drawButton(width / 2 - 100, height / 2 + 120, 200, 50, "Reiniciar", () => {
     resetGame();
   });
 }
@@ -151,6 +165,7 @@ function drawButton(x, y, w, h, label, callback) {
 //Inicia o jogo
 function startGame() {
   gameState = "playing";
+  bgMusic.setVolume(0.20);
   bgMusic.loop();
   resetGame();
 }
@@ -185,7 +200,7 @@ function drawMoons() {
   ellipse(width * 0.65, height * 0.25, 100, 100);
   fill(180);
   ellipse(width * 0.75, height * 0.3, 70, 70);
-  
+
   fill(160);
   for (let crater of moonCraters) {
     ellipse(crater.x, crater.y, crater.size, crater.size);
@@ -224,7 +239,7 @@ function drawShip() {
 //Desenha o Yoda
 function drawYoda() {
   //Corpo
-  fill(100, 50, 0); 
+  fill(100, 50, 0);
   rect(yodaX - 20, yodaY, 40, 60, 10); //Roupa
   fill(80, 40, 0);
   rect(yodaX - 10, yodaY + 10, 20, 40, 5); //Detalhe
@@ -326,8 +341,15 @@ function drawMeteors() {
   for (let i = meteors.length - 1; i >= 0; i--) {
     meteors[i].update();
     meteors[i].show();
+
     if (dist(meteors[i].x, meteors[i].y, yodaX, yodaY) < meteors[i].size / 2 + 20) {
+      drawExplosion(yodaX, yodaY);
+      bgMusic.stop()
+      explosionSound.play()
+      explosionSound.setVolume(0.30)
+      meteors.splice(i, 1);
       yodaAlive = false;
+      explosionActive = true;
     }
     if (meteors[i].offScreen()) {
       meteors.splice(i, 1);
@@ -347,5 +369,39 @@ function drawFrogs() {
       frogSound.setVolume(2)
       frogs.splice(i, 1);
     }
+  }
+}
+
+//Desenha a mini explosão de fim de jogo
+function drawExplosion(x, y) {
+  let numParticles = 40;
+  for (let i = 0; i < numParticles; i++) {
+    particles.push(new Particle(x, y));
+  }
+}
+
+class Particle {
+  constructor(x, y) {
+    this.pos = createVector(x, y);
+    this.vel = p5.Vector.random2D().mult(random(2, 5));
+    this.size = random(10, 20);
+    this.alpha = 255;
+  }
+
+  update() {
+    this.pos.add(this.vel);
+    this.alpha -= 5;
+    this.size *= 0.95;
+    this.vel.y += 0.1;
+  }
+
+  show() {
+    noStroke();
+    fill(255, 100, 0, this.alpha);
+    ellipse(this.pos.x, this.pos.y, this.size);
+  }
+
+  finished() {
+    return this.alpha < 0;
   }
 }
