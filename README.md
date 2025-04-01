@@ -18,3 +18,7 @@ Mais alguns arquivos do próprio P5.JS.
 # Colaboradores
 - Bruna da Silva Carnelossi
 - Matheus Henrique Heinzen
+
+# Como acessar o jogo
+Caso esteja interessado em testar o jogo, acesse o link:
+https://matheusheinzen.github.io/Yoda-Game/p5/Meteor%20Fall/index.html
