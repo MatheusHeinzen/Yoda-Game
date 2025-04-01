@@ -1,4 +1,7 @@
 //Variáveis e Listas
+let textTitle = "EM UMA GALÁXIA  \nDISTANTE...";
+let textContent = "As Forças Imperiais estão conquistando\ncada vez mais partes do universo graças a\narma suprema do Império, a ESTRELA DA\nMORTE, o planeta Sapin do sistema de Orbys\nfoi um dos planetas dizimados por este\ngrande mal.\n \n Destroços estão caindo nos planetas próximos \n \n  Você consiguirá ajudar nosso heroí?? " 
+let yPosition = 300; 
 let stars = [];
 let particles = [];
 let explosionActive = false;
@@ -62,6 +65,8 @@ function draw() {
 
   if (gameState === "menu") {
     drawMenu();
+  } else if (gameState === "waiting") {
+    drawCutScene();
   } else if (gameState === "playing") {
     drawGame();
   } else if (gameState === "gameOver") {
@@ -84,8 +89,39 @@ function drawMenu() {
   text("Meteor Fall", width / 2, height / 3);
 
   drawButton(width / 2 - 75, height / 2, 150, 50, "Jogar", () => {
-    startGame();
+    gameState = "waiting";
   });
+}
+
+//Cria a CutsScene
+function drawCutScene() {
+  background(0);
+  fill(255, 255, 0);
+  noStroke();
+  
+  push();
+  translate(width / 2, yPosition);
+  textAlign(CENTER, CENTER);
+  textSize(40);
+  text(textTitle, 0, 0);
+  textSize(20)
+  text(textContent, 0, 200);
+  pop();
+  
+  if (!bgMusic.isPlaying()) {
+    bgMusic.setVolume(0.20);
+    bgMusic.loop();
+    bgMusic.jump(3);
+  }
+
+  yPosition -= 0.7;
+
+  drawButton(width / 2 + 350, height / 2 + 220, 200, 50, "Skip ⏭", () => { startGame(); });
+
+  if (yPosition <= -250) {  
+    gameState = "playing";
+    startGame();
+  }
 }
 
 //Define o jogo
@@ -167,6 +203,7 @@ function startGame() {
   gameState = "playing";
   bgMusic.setVolume(0.20);
   bgMusic.loop();
+  bgMusic.jump(10);
   resetGame();
 }
 
